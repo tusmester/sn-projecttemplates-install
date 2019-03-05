@@ -9,7 +9,7 @@ namespace SnTemplateInstaller.Main
     public class GitConnector
     {
         private const string TemplateRepoGitUrl = "https://github.com/SenseNet/sn-vs-projecttemplates.git";
-        private const string DefaultRepositoryLocalPath = "D:\\Dev\\github\\sn-vs-projecttemplates";
+        internal const string DefaultRepositoryLocalPath = "D:\\Dev\\github\\sn-vs-projecttemplates";
         private const string DefaultBranchName = "develop";
 
         public static void GetTemplateRepository(
@@ -23,57 +23,47 @@ namespace SnTemplateInstaller.Main
 
             try
             {
-                if (System.IO.Directory.Exists(repositoryLocalPath))
+                if (!System.IO.Directory.Exists(repositoryLocalPath))
                 {
-                    using (var repo = new Repository(repositoryLocalPath))
+                    Repository.Clone(TemplateRepoGitUrl, repositoryLocalPath, new CloneOptions
                     {
-                        var branch = repo.Branches[branchName];
-                        if (branch == null)
-                        {
-                            var trackedBranch = repo.Branches[$"origin/{branchName}"];
-                            if (trackedBranch == null)
-                                throw new SnTemplateInstallerException($"Branch {branchName} not found.");
-
-                            branch = repo.CreateBranch(branchName, $"origin/{branchName}");
-                            repo.Branches.Update(branch, b => b.TrackedBranch = trackedBranch.CanonicalName);
-                        }
-
-                        if (branch == null)
-                            throw new SnTemplateInstallerException($"Branch {branchName} does not exist.");
-                        
-                        var currentBranch = Commands.Checkout(repo, branch);
-
-                        foreach (var br in repo.Branches)
-                        {
-                            Console.WriteLine($"{br.FriendlyName} {br.RemoteName} IsRemote:{br.IsRemote} IsTracking:{br.IsTracking}");
-                        }
-
-                        // User information to create a merge commit
-                        var signature = new Signature(new Identity("MERGE_USER_NAME", "MERGE_USER_EMAIL"), DateTimeOffset.Now);
-
-                        Commands.Pull(repo, signature, null);
-                    }
+                        BranchName = branchName
+                    });
                 }
-                else
+
+                using (var repo = new Repository(repositoryLocalPath))
                 {
-                    CloneTemplateRepository(repositoryLocalPath, branchName);
+                    var branch = repo.Branches[branchName];
+                    if (branch == null)
+                    {
+                        var trackedBranch = repo.Branches[$"origin/{branchName}"];
+                        if (trackedBranch == null)
+                            throw new SnTemplateInstallerException($"Branch {branchName} not found.");
+
+                        branch = repo.CreateBranch(branchName, $"origin/{branchName}");
+                        repo.Branches.Update(branch, b => b.TrackedBranch = trackedBranch.CanonicalName);
+                    }
+
+                    if (branch == null)
+                        throw new SnTemplateInstallerException($"Branch {branchName} does not exist.");
+
+                    Commands.Checkout(repo, branch);
+
+                    // User information to create a merge commit
+                    var signature = new Signature(new Identity("MERGE_USER_NAME", "MERGE_USER_EMAIL"),
+                        DateTimeOffset.Now);
+
+                    Commands.Pull(repo, signature, new PullOptions
+                    {
+                        MergeOptions = new MergeOptions
+                        {
+                            CommitOnSuccess = false,
+                            FailOnConflict = true 
+                        }
+                    });
                 }
             }
             catch (Exception ex)
-            {
-                throw new SnTemplateInstallerException(ex.Message);
-            }
-        }
-        private static void CloneTemplateRepository(string repositoryLocalPath, string branchName)
-        {
-            try
-            {
-                Repository.Clone(TemplateRepoGitUrl, repositoryLocalPath, new CloneOptions
-                {
-                    BranchName = branchName
-                });
-            }
-            catch (LibGit2SharpException ex)
             {
                 throw new SnTemplateInstallerException(ex.Message);
             }
