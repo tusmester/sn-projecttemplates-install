@@ -24,6 +24,13 @@ namespace SnTemplateInstaller.Main
             if (string.IsNullOrEmpty(featureName))
                 throw new SnTemplateInstallerException("Feature name cannot be empty.");
 
+            if (string.IsNullOrEmpty(targetParent))
+                targetParent = DefaultTargetFolder;
+            if (string.IsNullOrEmpty(dbServer))
+                dbServer = DefaultDbServer;
+            if (string.IsNullOrEmpty(repositoryLocalPath))
+                repositoryLocalPath = GitConnector.DefaultRepositoryLocalPath;
+
             var targetPath = Path.Combine(targetParent, featureName);
 
             var taskTimer = Stopwatch.StartNew();
