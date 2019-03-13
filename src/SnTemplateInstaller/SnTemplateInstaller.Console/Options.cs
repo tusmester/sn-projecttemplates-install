@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using CommandLine;
+﻿using CommandLine;
 
 namespace SnTemplateInstaller.Console
 {
@@ -16,7 +13,7 @@ namespace SnTemplateInstaller.Console
         [Option('r', "repository", Required = false, HelpText = "Template repository path on the local machine.")]
         public string RepositoryPath { get; set; }
 
-        [Option('t', "target", Required = false, HelpText = "Target folder path.")]
+        [Option('p', "targetpath", Required = false, HelpText = "Target folder path.")]
         public string TargetPath { get; set; }
 
         [Option('d', "databaseserver", Required = false, HelpText = "Database server name.")]
